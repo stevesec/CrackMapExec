@@ -11,7 +11,7 @@ from re import sub, I
 from zipfile import ZipFile
 from termcolor import colored
 
-from cme.helpers.ldapdomaindump import Connection, Server, domainDumper, domainDump
+from cme.helpers.ldapdomaindump import Connection, Server, domainDumper, domainDump, domainDumpConfig
 
 from Cryptodome.Hash import MD4
 from OpenSSL.SSL import SysCallError
@@ -1410,6 +1410,8 @@ class ldap(connection):
     def ldapdomaindumper(self, auth_method='NTLM'):
         import sys
 
+        cnf = domainDumpConfig()
+
         auth_args = {
             'user': self.username, # Domain Username
             'password': self.password, # Domain User Password
@@ -1437,7 +1439,7 @@ class ldap(connection):
         self.logger.highlight("Bind OK")
         self.logger.highlight(f"Starting domain dump @ {timestamp}")
 
-        dd = domainDumper(ldd, c,)
+        dd = domainDumper(ldd, c, cnf)
 
         dd.domainDump()
         self.logger.highlight(f"Domain dump finished @ {timestamp}")
