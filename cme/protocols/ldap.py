@@ -11,6 +11,8 @@ from re import sub, I
 from zipfile import ZipFile
 from termcolor import colored
 
+from cme.helpers.ldapdomaindump import Connection, Server, domainDumper, domainDump
+
 from Cryptodome.Hash import MD4
 from OpenSSL.SSL import SysCallError
 from bloodhound.ad.authentication import ADAuthentication
@@ -1404,3 +1406,40 @@ class ldap(connection):
                 if each_file.startswith(timestamp) and each_file.endswith("json"):
                     z.write(each_file)
                     os.remove(each_file)
+
+    def ldapdomaindumper(self, auth_method='NTLM'):
+        import sys
+
+        auth_args = {
+            'user': self.username, # Domain Username
+            'password': self.password, # Domain User Password
+            'domain':self.domain + '\\', # Adds \\ to domain (as specified in ldapdomaindump)
+            'auth_method': auth_method, # Authentication Method (as specified in LDD)
+            'dns_server': self.args.nameserver, # Optional Nameserver
+        }
+
+        authentication=None
+        if auth_args['user'] is not None:
+            if auth_args['auth_method'] == 'SIMPLE':
+                authentication = 'SIMPLE'
+            else:
+                authentication = 'NTLM'
+    
+        # Would like somewhere to implement a timestamp?
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+        ldd = Server(self.host, get_info=ALL)
+        c = Connection(ldd, user=self.username, password=self.password, authentication=authentication)
+
+        if not c.bind():
+            self.logger.highlight("Count not bind with specified credentials")
+            self.logger.highlight(c.result)
+            sys.exit(1)
+        self.logger.highlight("Bind OK")
+        self.logger.highlight(f"Starting domain dump @ {timestamp}")
+
+        dd = domainDumper(ldd, c,)
+
+        dd.domainDump()
+        self.logger.highlight(f"Domain dump finished @ {timestamp}")
+
+
